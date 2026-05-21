@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="R2R2R">
+<title>R2R2R Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #0d0d0d;
+    color: #e8e0d0;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  #header {
+    position: sticky; top: 0; z-index: 100;
+    padding: 14px 20px;
+    border-bottom: 2px solid var(--accent);
+    background: var(--phase-bg);
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: var(--accent); }
+  .logo-sub { font-size: 9px; opacity: 0.45; letter-spacing: 2px; margin-top: -3px; }
+  .header-right { text-align: right; }
+  .week-label { font-size: 11px; color: var(--accent); letter-spacing: 1px; }
+  .week-dates { font-size: 9px; opacity: 0.4; }
+  .week-count { font-size: 10px; margin-top: 2px; }
+  .week-count span { color: var(--accent); }
+
+  #main { max-width: 680px; margin: 0 auto; padding: 18px 14px; }
+
+  .section-label { font-size: 9px; letter-spacing: 2px; opacity: 0.4; margin-bottom: 8px; }
+
+  /* Week selector */
+  #week-selector { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 18px; }
+  .week-btn {
+    background: #1a1a1a; border: 1px solid #2a2a2a; color: #666;
+    padding: 4px 9px; border-radius: 3px; font-size: 9px; cursor: pointer;
+    letter-spacing: 1px; font-family: inherit; opacity: 0.7;
+    position: relative; transition: all 0.15s;
+  }
+  .week-btn.active { background: var(--accent); border-color: var(--accent); color: #000; opacity: 1; font-weight: 500; }
+  .week-btn .dot {
+    position: absolute; top: -3px; right: -3px;
+    background: #4caf50; border-radius: 50%; width: 7px; height: 7px;
+  }
+
+  /* Progress bar */
+  #progress-wrap { margin-bottom: 20px; }
+  .prog-meta { display: flex; justify-content: space-between; font-size: 9px; opacity: 0.4; margin-bottom: 4px; }
+  .prog-track { background: #1a1a1a; border-radius: 2px; height: 4px; }
+  .prog-fill { background: var(--accent); height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Day cards */
+  .day-card {
+    background: #111; border: 1px solid #1e1e1e;
+    border-left: 3px solid #2a2a2a;
+    border-radius: 4px; padding: 11px 14px;
+    margin-bottom: 7px; transition: transform 0.15s;
+  }
+  .day-card.logged { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); border-left-color: var(--accent); }
+  .day-card.rest { border-left-color: #1e1e1e; }
+  .day-inner { display: flex; align-items: flex-start; gap: 10px; }
+  .day-label-wrap { min-width: 34px; }
+  .day-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: #444; line-height: 1; }
+  .day-card.logged .day-name { color: var(--accent); }
+  .done-tag { font-size: 8px; color: var(--accent); opacity: 0.7; margin-top: 1px; }
+  .day-body { flex: 1; min-width: 0; }
+  .planned-text { font-size: 10px; opacity: 0.75; line-height: 1.55; }
+  .day-card.logged .planned-text { opacity: 0.3; text-decoration: line-through; }
+  .logged-entry {
+    margin-top: 6px; padding: 5px 9px;
+    background: var(--tag-bg); border-radius: 3px;
+    font-size: 10px; color: var(--accent); line-height: 1.45;
+  }
+  .logged-label { opacity: 0.5; font-size: 8px; letter-spacing: 1px; }
+
+  /* Log input */
+  .log-input-wrap { margin-top: 7px; display: flex; gap: 5px; }
+  .log-input {
+    flex: 1; background: #0d0d0d; border: 1px solid var(--accent);
+    border-radius: 3px; padding: 6px 9px; color: #e8e0d0;
+    font-size: 10px; font-family: inherit;
+  }
+  .log-input:focus { outline: none; }
+  .btn-log {
+    background: var(--accent); border: none; border-radius: 3px;
+    padding: 6px 12px; color: #000; font-size: 9px; font-weight: 500;
+    cursor: pointer; font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-cancel {
+    background: transparent; border: 1px solid #333; border-radius: 3px;
+    padding: 6px 9px; color: #555; font-size: 9px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* Action buttons */
+  .day-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .btn-add {
+    background: rgba(255,255,255,0.07); border: 1px solid #2a2a2a;
+    border-radius: 3px; padding: 4px 9px; color: #777;
+    font-size: 8px; cursor: pointer; font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-clear {
+    background: transparent; border: 1px solid #2a2a2a;
+    border-radius: 3px; padding: 4px 7px; color: #444;
+    font-size: 9px; cursor: pointer; font-family: inherit;
+  }
+
+  /* Adjustment panel */
+  #adj-panel {
+    background: var(--tag-bg); border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px; padding: 14px 18px; margin-bottom: 18px;
+  }
+  .adj-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+    letter-spacing: 2px; color: var(--accent); margin-bottom: 8px;
+  }
+  .adj-body { font-size: 10px; line-height: 1.8; white-space: pre-wrap; opacity: 0.85; }
+  .adj-loading { font-size: 10px; opacity: 0.45; }
+
+  /* Trigger button */
+  #adj-trigger {
+    width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px; padding: 10px; color: var(--accent);
+    font-size: 9px; cursor: pointer; font-family: inherit;
+    letter-spacing: 2px; margin-bottom: 18px;
+  }
+
+  /* Footer */
+  #footer { text-align: center; font-size: 8px; opacity: 0.18; letter-spacing: 2px; padding-top: 10px; }
+
+  /* CSS vars per phase */
+  :root {
+    --accent: #4a7fd4;
+    --phase-bg: #1a2744;
+    --tag-bg: #2a3f6f;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <div class="logo">R2R2R TRAINER</div>
+    <div class="logo-sub">JON · TOPEKA KS · OCTOBER EVENT</div>
+  </div>
+  <div class="header-right">
+    <div class="week-label" id="hdr-week-label"></div>
+    <div class="week-dates" id="hdr-week-dates"></div>
+    <div class="week-count" id="hdr-count"></div>
+  </div>
+</div>
+
+<div id="main">
+  <div class="section-label">SELECT WEEK</div>
+  <div id="week-selector"></div>
+  <div id="progress-wrap">
+    <div class="prog-meta"><span>WEEK PROGRESS</span><span id="prog-label"></span></div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div id="days-container"></div>
+  <div id="adj-panel" style="display:none">
+    <div class="adj-title">⚡ COACH ADJUSTMENT</div>
+    <div id="adj-body"></div>
+  </div>
+  <button id="adj-trigger" style="display:none" onclick="triggerAdj()">⚡ GET COACH ADJUSTMENT FOR THIS WEEK</button>
+  <div id="footer">R2R2R · 44 MILES · 10,710 FT GAIN · OCTOBER 2025</div>
+</div>
+
+<script>
+const PLAN = {
+  "pre-1": { label:"Pre-Season Wk 1", dates:"May 11–17",
+    mon:"Recovery / Mobility — 10-15 min light stretching",
+    tue:"45 min easy cardio — flat, low HR, conversational pace",
+    wed:"Lower body strength — squats, lunges, step-ups, calf raises (3x10)",
+    thu:"Steep hill: 15-20 vest reps (0.17 mi @ 15%) — note HR and leg fatigue",
+    fri:"Rest",
+    sat:"8-10 mile long walk/hike — flat, no weight, time on feet",
+    sun:"Backward treadmill intro — 3x5 min at 10% incline" },
+  "pre-2": { label:"Pre-Season Wk 2", dates:"May 18–24",
+    mon:"Recovery / Mobility — focus on quads, hip flexors, calves",
+    tue:"45-60 min easy cardio — flat, conversational HR",
+    wed:"Lower body strength + backward treadmill: 3x8 min at 12%",
+    thu:"Steep hill: 20-25 vest reps — jog the downs, controlled",
+    fri:"Rest",
+    sat:"10-12 mile long hike — light pack 10-15 lbs",
+    sun:"45-60 min easy recovery walk — flat, low HR" },
+  "pre-3": { label:"Pre-Season Wk 3", dates:"May 25–31",
+    mon:"Recovery / Mobility — extra attention to quads and knees",
+    tue:"45-60 min easy cardio OR 40 min continuous stairmill",
+    wed:"Lower body strength + backward treadmill: 4x8 min at 12-15%",
+    thu:"Steep hill: 25-30 vest reps OR 40 min stairmill — push it",
+    fri:"Rest",
+    sat:"12-14 mile long hike — light pack, rolling terrain if possible",
+    sun:"45-60 min easy recovery — leave tank half-full, Week 1 starts Monday" },
+  "wk-1": { label:"Week 1 — Base", dates:"Jun 1–7",
+    mon:"Recovery / Mobility",
+    tue:"45-60 min easy cardio",
+    wed:"Lower body strength (3x12) — squats, lunges, step-ups, calf raises",
+    thu:"45 min incline walk — treadmill 10-15% OR 15-20 vest reps",
+    fri:"Rest",
+    sat:"90-120 min long hike — flat to rolling, time on feet",
+    sun:"45-60 min active recovery — easy pace, flat" },
+  "wk-2": { label:"Week 2 — Base", dates:"Jun 8–14",
+    mon:"Recovery / Mobility",
+    tue:"45-60 min easy cardio",
+    wed:"Lower body strength (add 1 set from Wk 1)",
+    thu:"45 min incline walk — 20-25 vest reps",
+    fri:"Rest",
+    sat:"90-120 min long hike — light pack 10-15 lbs",
+    sun:"45-60 min active recovery" },
+  "wk-3": { label:"Week 3 — Base", dates:"Jun 15–21",
+    mon:"Recovery / Mobility",
+    tue:"45-60 min easy cardio",
+    wed:"Strength + backward treadmill: 3x5 min at 10%",
+    thu:"50 min incline walk — 25 vest reps",
+    fri:"Rest",
+    sat:"2-2.5 hr long hike — light pack, rolling terrain",
+    sun:"45-60 min active recovery" },
+  "wk-4": { label:"Week 4 — Base", dates:"Jun 22–28",
+    mon:"Recovery / Mobility",
+    tue:"60 min easy cardio",
+    wed:"Strength + backward treadmill: 3x8 min at 12%",
+    thu:"55 min incline walk — 25-30 vest reps",
+    fri:"Rest",
+    sat:"2.5 hr long hike — practice trekking poles if using",
+    sun:"60 min active recovery" },
+  "wk-5": { label:"Week 5 — Build", dates:"Jun 29–Jul 5",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline intervals — stairmill: 5x8 min hard / 3 min easy",
+    wed:"Strength (moderate) + backward treadmill: 4x8 min at 12-15%",
+    thu:"60 min zone 2 — flat run or bike, conversational",
+    fri:"Rest",
+    sat:"★ MANITOU INCLINE TRIP #1 — target 42-48 min ascent, descend Barr Trail",
+    sun:"60-90 min moderate hike — weighted pack 15-20 lbs" },
+  "wk-6": { label:"Week 6 — Build", dates:"Jul 6–12",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline intervals — stairmill: 6x8 min hard / 2 min easy",
+    wed:"Strength (moderate) + backward treadmill: 4x10 min at 15%",
+    thu:"60 min zone 2",
+    fri:"Rest",
+    sat:"3 hr long hike — weighted pack 20 lbs, practice eating/drinking on the move",
+    sun:"75 min moderate + 20 min backward treadmill mid-session" },
+  "wk-7": { label:"Week 7 — Build", dates:"Jul 13–19",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline intervals — 20 min stairmill + 20 vest reps on hill",
+    wed:"Strength (moderate) + backward treadmill: 5x10 min at 15%",
+    thu:"60 min zone 2",
+    fri:"Rest",
+    sat:"3-3.5 hr long hike — weighted 20 lbs, trekking poles",
+    sun:"75-90 min moderate — focus on descent control and foot placement" },
+  "wk-8": { label:"Week 8 — DELOAD", dates:"Jul 20–26",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline intervals",
+    wed:"DELOAD — light strength + backward treadmill: 3x8 min at 12%",
+    thu:"45 min easy zone 2",
+    fri:"Rest",
+    sat:"DELOAD — 2.5 hr hike, lighter pack (10 lbs), easy pace",
+    sun:"60 min easy recovery" },
+  "wk-9": { label:"Week 9 — Peak", dates:"Jul 27–Aug 2",
+    mon:"Recovery / Mobility",
+    tue:"60-75 min incline — stairmill: 7x8 min hard / 2 min easy",
+    wed:"Strength (maintain) + backward treadmill: 5x12 min at 15%",
+    thu:"60 min steady — moderate hike or run",
+    fri:"Rest",
+    sat:"4-5 hr long hike — weighted 25 lbs, sustained pace management",
+    sun:"★ BACK-TO-BACK: 2-3 hr hike on fatigued legs — most important adaptation" },
+  "wk-10": { label:"Week 10 — Peak", dates:"Aug 3–9",
+    mon:"Recovery / Mobility",
+    tue:"60-75 min incline",
+    wed:"Strength (maintain) + backward treadmill: 5x12 min at 15%",
+    thu:"60 min steady",
+    fri:"Rest",
+    sat:"★ MANITOU INCLINE TRIP #2 — target 38-44 min, 2 laps if strong, descend Barr Trail",
+    sun:"2-3 hr recovery hike — easy pace, shake out legs" },
+  "wk-11": { label:"Week 11 — Peak", dates:"Aug 10–16",
+    mon:"Recovery / Mobility",
+    tue:"60-75 min incline",
+    wed:"Strength (maintain) + backward treadmill: 5x15 min at 15%",
+    thu:"60 min steady",
+    fri:"Rest",
+    sat:"5-6 hr long hike — weighted 25-30 lbs, full nutrition/hydration strategy",
+    sun:"★ BACK-TO-BACK: 2-3 hr hike — most canyon-specific workout in the plan" },
+  "wk-12": { label:"Week 12 — DELOAD", dates:"Aug 17–23",
+    mon:"Recovery / Mobility",
+    tue:"60-75 min incline",
+    wed:"DELOAD — light strength only, no backward treadmill",
+    thu:"45 min easy steady",
+    fri:"Rest",
+    sat:"DELOAD — 3 hr hike, lighter pack, easy pace",
+    sun:"90 min easy recovery" },
+  "wk-13": { label:"Week 13 — Simulation", dates:"Aug 24–30",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline — stairmill: 8x8 min hard",
+    wed:"Light strength + backward treadmill: 4x15 min at 15%",
+    thu:"60 min steady",
+    fri:"Rest",
+    sat:"★ MANITOU INCLINE TRIP #3 — target 35-40 min, use exact R2R2R kit, gear check",
+    sun:"★ BACK-TO-BACK: 4-5 hr hike on fatigued legs — most important block of the plan" },
+  "wk-14": { label:"Week 14 — Simulation", dates:"Aug 31–Sep 6",
+    mon:"Recovery / Mobility",
+    tue:"60 min incline",
+    wed:"Light strength + backward treadmill: 3x12 min — maintain only",
+    thu:"60 min steady",
+    fri:"Rest",
+    sat:"★ 6-8 HR SIMULATION DAY — full R2R2R kit, poles, nutrition plan, dress rehearsal",
+    sun:"3-4 hr long hike — moderate pack, easy pace" },
+  "wk-15": { label:"Week 15 — Taper", dates:"Sep 7–13",
+    mon:"Recovery",
+    tue:"45 min easy — no incline intervals, protect legs",
+    wed:"Light strength only — no backward treadmill",
+    thu:"45 min steady — easy",
+    fri:"Rest",
+    sat:"2.5-3 hr hike — light pack only (10 lbs)",
+    sun:"60-75 min easy walk — focus on sleep and nutrition" },
+  "wk-16": { label:"Week 16 — Final Taper", dates:"Sep 14–20",
+    mon:"Rest / Mobility — sleep, hydrate, eat well",
+    tue:"20-30 min easy walk",
+    wed:"Light movement only — 10 min easy stretch",
+    thu:"Rest — travel day if needed, stay off feet",
+    fri:"Rest — short 20 min shakeout walk only",
+    sat:"Very light / travel — no hiking, legs fully fresh",
+    sun:"★ R2R2R EVENT — Target: 16-20 hrs · Finish strong · Help your group" }
+};
+
+const WEEK_ORDER = ["pre-1","pre-2","pre-3","wk-1","wk-2","wk-3","wk-4","wk-5","wk-6","wk-7","wk-8","wk-9","wk-10","wk-11","wk-12","wk-13","wk-14","wk-15","wk-16"];
+const DAYS = ["mon","tue","wed","thu","fri","sat","sun"];
+const DAY_LABELS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+const PHASE_COLORS = {
+  pre: { accent:"#4a7fd4", bg:"#1a2744", tag:"#2a3f6f" },
+  base: { accent:"#4caf50", bg:"#1a2e1a", tag:"#2a4a2a" },
+  build: { accent:"#f0b429", bg:"#2e2a0e", tag:"#4a4010" },
+  peak: { accent:"#e8734a", bg:"#2e1a0e", tag:"#4a2a10" },
+  sim: { accent:"#a855f7", bg:"#2a1a35", tag:"#3d1f55" },
+  taper: { accent:"#888", bg:"#1e1e1e", tag:"#2a2a2a" }
+};
+
+function getPhaseColors(wkId) {
+  if (wkId.startsWith("pre")) return PHASE_COLORS.pre;
+  const n = parseInt(wkId.split("-")[1]);
+  if (n <= 4) return PHASE_COLORS.base;
+  if (n <= 8) return PHASE_COLORS.build;
+  if (n <= 12) return PHASE_COLORS.peak;
+  if (n <= 14) return PHASE_COLORS.sim;
+  return PHASE_COLORS.taper;
+}
+
+let activeWeek = localStorage.getItem("r2r2r-week") || "pre-1";
+let logs = JSON.parse(localStorage.getItem("r2r2r-logs") || "{}");
+let loggingDay = null;
+let currentAdj = null;
+let adjLoading = false;
+
+function saveLogs() { localStorage.setItem("r2r2r-logs", JSON.stringify(logs)); }
+function saveWeek() { localStorage.setItem("r2r2r-week", activeWeek); }
+
+function completedDays(wkId) {
+  return DAYS.filter(d => logs[wkId]?.[d]?.text).length;
+}
+
+function setPhase(wkId) {
+  const c = getPhaseColors(wkId);
+  document.documentElement.style.setProperty("--accent", c.accent);
+  document.documentElement.style.setProperty("--phase-bg", c.bg);
+  document.documentElement.style.setProperty("--tag-bg", c.tag);
+}
+
+function renderWeekSelector() {
+  const el = document.getElementById("week-selector");
+  el.innerHTML = "";
+  WEEK_ORDER.forEach(wk => {
+    const done = completedDays(wk);
+    const isActive = wk === activeWeek;
+    const label = wk.startsWith("pre") ? `PRE ${wk.split("-")[1]}` : wk.toUpperCase();
+    const btn = document.createElement("button");
+    btn.className = "week-btn" + (isActive ? " active" : "");
+    btn.textContent = label;
+    if (done > 0 && !isActive) {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      btn.appendChild(dot);
+    }
+    btn.onclick = () => { activeWeek = wk; saveWeek(); currentAdj = null; render(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderHeader() {
+  const wk = PLAN[activeWeek];
+  const done = completedDays(activeWeek);
+  document.getElementById("hdr-week-label").textContent = wk.label;
+  document.getElementById("hdr-week-dates").textContent = wk.dates;
+  document.getElementById("hdr-count").innerHTML = `<span>${done}</span>/7 days logged`;
+}
+
+function renderProgress() {
+  const done = completedDays(activeWeek);
+  document.getElementById("prog-label").textContent = `${done}/7 DAYS`;
+  document.getElementById("prog-fill").style.width = `${(done/7)*100}%`;
+}
+
+function renderDays() {
+  const container = document.getElementById("days-container");
+  container.innerHTML = "";
+  const wk = PLAN[activeWeek];
+  const wkLogs = logs[activeWeek] || {};
+
+  DAYS.forEach((dayKey, i) => {
+    const logged = wkLogs[dayKey];
+    const isRest = wk[dayKey]?.toLowerCase().startsWith("rest");
+    const isLogging = loggingDay === dayKey;
+
+    const card = document.createElement("div");
+    card.className = "day-card" + (logged ? " logged" : "") + (isRest && !logged ? " rest" : "");
+
+    let html = `<div class="day-inner">
+      <div class="day-label-wrap">
+        <div class="day-name">${DAY_LABELS[i]}</div>
+        ${logged ? `<div class="done-tag">DONE</div>` : ""}
+      </div>
+      <div class="day-body">
+        <div class="planned-text">${wk[dayKey]}</div>
+        ${logged ? `<div class="logged-entry"><span class="logged-label">LOGGED: </span>${logged.text}</div>` : ""}
+        ${isLogging ? `
+          <div class="log-input-wrap">
+            <input class="log-input" id="input-${dayKey}" placeholder="What did you actually do?" autocomplete="off">
+            <button class="btn-log" onclick="submitLog('${dayKey}')">LOG</button>
+            <button class="btn-cancel" onclick="cancelLog()">✕</button>
+          </div>` : ""}
+      </div>
+      <div class="day-actions">
+        ${!isLogging && !logged ? `<button class="btn-add" onclick="startLog('${dayKey}')">+ LOG</button>` : ""}
+        ${!isLogging && logged ? `<button class="btn-clear" onclick="clearLog('${dayKey}')">✕</button>` : ""}
+      </div>
+    </div>`;
+
+    card.innerHTML = html;
+    container.appendChild(card);
+
+    if (isLogging) {
+      const inp = document.getElementById(`input-${dayKey}`);
+      if (inp) {
+        inp.focus();
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") submitLog(dayKey); });
+      }
+    }
+  });
+}
+
+function renderAdj() {
+  const panel = document.getElementById("adj-panel");
+  const body = document.getElementById("adj-body");
+  const trigger = document.getElementById("adj-trigger");
+  const done = completedDays(activeWeek);
+
+  if (adjLoading) {
+    panel.style.display = "block";
+    trigger.style.display = "none";
+    body.innerHTML = `<div class="adj-loading">Analyzing your week and adjusting...</div>`;
+  } else if (currentAdj) {
+    panel.style.display = "block";
+    trigger.style.display = "none";
+    body.innerHTML = `<div class="adj-body">${currentAdj}</div>`;
+  } else {
+    panel.style.display = "none";
+    trigger.style.display = done > 0 ? "block" : "none";
+  }
+}
+
+function render() {
+  setPhase(activeWeek);
+  renderWeekSelector();
+  renderHeader();
+  renderProgress();
+  renderDays();
+  renderAdj();
+}
+
+function startLog(dayKey) {
+  loggingDay = dayKey;
+  render();
+}
+
+function cancelLog() {
+  loggingDay = null;
+  render();
+}
+
+function clearLog(dayKey) {
+  if (logs[activeWeek]) delete logs[activeWeek][dayKey];
+  saveLogs();
+  currentAdj = null;
+  render();
+}
+
+async function submitLog(dayKey) {
+  const inp = document.getElementById(`input-${dayKey}`);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+
+  if (!logs[activeWeek]) logs[activeWeek] = {};
+  logs[activeWeek][dayKey] = { text, time: new Date().toISOString() };
+  saveLogs();
+  loggingDay = null;
+  currentAdj = null;
+  render();
+  await fetchAdj(dayKey, text);
+}
+
+async function triggerAdj() {
+  const wkLogs = logs[activeWeek] || {};
+  const lastDay = [...DAYS].reverse().find(d => wkLogs[d]?.text);
+  if (!lastDay) return;
+  await fetchAdj(lastDay, wkLogs[lastDay].text);
+}
+
+async function fetchAdj(dayKey, logText) {
+  adjLoading = true;
+  currentAdj = null;
+  renderAdj();
+
+  const wk = PLAN[activeWeek];
+  const wkLogs = logs[activeWeek] || {};
+  const logSummary = DAYS.map((d,i) => {
+    const entry = wkLogs[d];
+    return `${DAY_LABELS[i]}: ${entry?.text ? `LOGGED — "${entry.text}"` : "(not yet done)"}`;
+  }).join("\n");
+
+  const prompt = `You are a coach for Jon, training for the Grand Canyon Rim-to-Rim-to-Rim (R2R2R) in October. 44-45 miles, 10,710 ft total elevation gain, targeting 16-20 hours. Jon is fit — 45-50 min on Manitou Incline, uses a 40lb vest on a 0.17 mi hill at 15% grade.
+
+Current week: ${wk.label} (${wk.dates})
+
+Planned workouts:
+${DAYS.map((d,i) => `${DAY_LABELS[i]}: ${wk[d]}`).join("\n")}
+
+What Jon has logged so far:
+${logSummary}
+
+Today is ${DAY_LABELS[DAYS.indexOf(dayKey)]}. Jon just logged: "${logText}"
+
+Give a brief adjusted recommendation for the REMAINING days this week. Rules:
+- If Jon exceeded the plan, increase intensity slightly for remaining days
+- If Jon underperformed, suggest redistributing volume without overloading
+- If on track, confirm the plan with a useful coaching note
+- Be direct — coach talking to an athlete, not a chatbot
+- Under 200 words total
+- Day-by-day list for remaining days only
+- Start with one sentence summary of how the week is tracking`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    currentAdj = data.content?.[0]?.text || "Could not generate adjustment.";
+  } catch {
+    currentAdj = "Could not reach Claude. Check your connection.";
+  }
+
+  adjLoading = false;
+  renderAdj();
+}
+
+render();
+</script>
+</body>
+</html>
